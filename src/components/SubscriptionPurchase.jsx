@@ -8,10 +8,12 @@ import {
   Typography,
   Box,
   Card,
-  CardContent,
   Alert,
-  CircularProgress
+  CircularProgress,
+  IconButton,
+  Divider
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close'; // Если есть @mui/icons-material
 import { checkSubscription, purchaseSubscription } from '../utils/subscription';
 
 const SubscriptionPurchase = ({ open, onClose }) => {
@@ -22,9 +24,7 @@ const SubscriptionPurchase = ({ open, onClose }) => {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    if (open) {
-      loadSubscriptionInfo();
-    }
+    if (open) loadSubscriptionInfo();
   }, [open]);
 
   const loadSubscriptionInfo = async () => {
@@ -34,7 +34,7 @@ const SubscriptionPurchase = ({ open, onClose }) => {
       const info = await checkSubscription();
       setSubscriptionInfo(info);
     } catch (err) {
-      setError('Ошибка загрузки информации о подписке');
+      setError('Ошибка загрузки данных');
     } finally {
       setLoading(false);
     }
@@ -44,151 +44,160 @@ const SubscriptionPurchase = ({ open, onClose }) => {
     setPurchasing(true);
     setError('');
     setSuccess('');
-
     try {
       const result = await purchaseSubscription(duration);
-      
       if (result.requiresTelegram) {
-        // Перенаправление на Telegram
         window.open(result.telegramUrl || 'https://t.me/jpegweb', '_blank');
-        setSuccess('Откройте Telegram для покупки месячной подписки');
+        setSuccess('Завершите оплату в Telegram');
       } else if (result.success) {
-        setSuccess(result.message || 'Подписка успешно активирована!');
+        setSuccess('Активировано!');
         await loadSubscriptionInfo();
-        setTimeout(() => {
-          onClose();
-        }, 2000);
-      } else {
-        setError(result.message || 'Ошибка при покупке подписки');
+        setTimeout(onClose, 2000);
       }
     } catch (err) {
-      setError('Ошибка при покупке подписки');
+      setError('Ошибка транзакции');
     } finally {
       setPurchasing(false);
     }
   };
 
-  if (loading) {
-    return (
-      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-        <DialogContent>
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-            <CircularProgress />
-          </Box>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   const isActive = subscriptionInfo?.isActive;
   const expiresAt = subscriptionInfo?.expiresAt;
   const daysLeft = expiresAt ? Math.ceil((expiresAt - new Date()) / (1000 * 60 * 60 * 24)) : null;
 
+  const cardStyle = {
+    bgcolor: 'rgba(255, 255, 255, 0.03)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '12px',
+    p: 2,
+    transition: 'transform 0.2s, border-color 0.2s',
+    '&:hover': {
+      borderColor: 'rgba(237, 93, 25, 0.5)',
+      transform: 'translateY(-2px)'
+    }
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'rgb(237,93,25)' }}>
-          AtomPro+ Подписка
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="xs" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: '#0d0d0d',
+          backgroundImage: 'none',
+          color: '#fff',
+          borderRadius: '16px',
+          border: '1px solid rgba(255,255,255,0.1)'
+        }
+      }}
+    >
+      <DialogTitle sx={{ m: 0, p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '0.5px', fontSize: '1.1rem' }}>
+          Atom<span style={{ color: '#ed5d19' }}>Pro+</span>
         </Typography>
+        <IconButton onClick={onClose} sx={{ color: 'grey.500' }} size="small">
+           <Typography variant="body2">✕</Typography>
+        </IconButton>
       </DialogTitle>
-      <DialogContent>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+
+      <DialogContent sx={{ px: 3, pb: 4 }}>
+        {error && <Alert severity="error" variant="filled" sx={{ mb: 2, borderRadius: '8px' }}>{error}</Alert>}
+        {success && <Alert severity="success" variant="filled" sx={{ mb: 2, borderRadius: '8px' }}>{success}</Alert>}
 
         {isActive ? (
-          <Box>
-            <Alert severity="success" sx={{ mb: 2 }}>
-              У вас активна подписка AtomPro+
-            </Alert>
-            {expiresAt && (
-              <Typography variant="body2" color="text.secondary">
-                Подписка действительна до: {expiresAt.toLocaleDateString('ru-RU')}
-                {daysLeft !== null && daysLeft > 0 && (
-                  <span> ({daysLeft} {daysLeft === 1 ? 'день' : daysLeft < 5 ? 'дня' : 'дней'})</span>
-                )}
-              </Typography>
-            )}
-            <Typography variant="body2" sx={{ mt: 2 }}>
-              <strong>Преимущества AtomPro+:</strong>
+          <Box sx={{ textAlign: 'center', py: 2 }}>
+            <Box sx={{ mb: 2, color: '#4caf50', fontSize: '3rem' }}>✓</Box>
+            <Typography variant="h6" gutterBottom>Подписка активна</Typography>
+            <Typography variant="body2" sx={{ color: 'grey.500', mb: 3 }}>
+              До {expiresAt?.toLocaleDateString('ru-RU')} ({daysLeft} дн.)
             </Typography>
-            <Box component="ul" sx={{ mt: 1, pl: 2 }}>
-              <li>Загрузка музыки до 50MB</li>
-              <li>Дополнительные возможности</li>
-            </Box>
+            <Divider sx={{ mb: 3, borderColor: 'rgba(255,255,255,0.1)' }} />
           </Box>
         ) : (
           <Box>
-            <Typography variant="body1" sx={{ mb: 3 }}>
-              Получите доступ к расширенным возможностям AtomGlide
+            <Typography variant="body2" sx={{ color: 'grey.400', mb: 3, lineHeight: 1.6 }}>
+              Разблокируйте профессиональные инструменты для работы с контентом без ограничений.
             </Typography>
 
-            <Typography variant="body2" sx={{ mb: 2 }}>
-              <strong>Преимущества AtomPro+:</strong>
-            </Typography>
-            <Box component="ul" sx={{ mb: 3, pl: 2 }}>
-              <li>Загрузка музыки до 50MB (обычные пользователи: 10MB)</li>
-              <li>Дополнительные возможности</li>
+            <Box sx={{ mb: 3 }}>
+               {[
+                 ['Загрузка файлов', 'до 50 MB'],
+                 ['Приоритетная обработка', 'Включено'],
+                 ['Эксклюзивные функции', 'Доступны']
+               ].map(([label, value], i) => (
+                 <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                   <Typography variant="caption" sx={{ color: 'grey.500' }}>{label}</Typography>
+                   <Typography variant="caption" sx={{ fontWeight: 'bold' }}>{value}</Typography>
+                 </Box>
+               ))}
             </Box>
 
-            <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
-              <Card sx={{ bgcolor: '#f5f5f5' }}>
-                <CardContent>
-                  <Typography variant="h6" sx={{ mb: 1 }}>
-                    Неделя - 300 ATM
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Получите все преимущества AtomPro+ на 7 дней
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    onClick={() => handlePurchase('week')}
-                    disabled={purchasing}
-                    sx={{ bgcolor: 'rgb(237,93,25)', '&:hover': { bgcolor: 'rgb(200,80,20)' } }}
-                  >
-                    {purchasing ? <CircularProgress size={24} /> : 'Купить за 300 ATM'}
-                  </Button>
-                </CardContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {/* План 1 */}
+              <Card sx={cardStyle}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ color: 'grey.300' }}>Недельный доступ</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 700 }}>300 ATM</Typography>
+                  </Box>
+                </Box>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={() => handlePurchase('week')}
+                  disabled={purchasing}
+                  sx={{ 
+                    bgcolor: '#fff', 
+                    color: '#000', 
+                    fontWeight: 700,
+                    '&:hover': { bgcolor: '#e0e0e0' },
+                    borderRadius: '8px'
+                  }}
+                >
+                  {purchasing ? <CircularProgress size={20} /> : 'Активировать'}
+                </Button>
               </Card>
 
-              <Card sx={{ bgcolor: '#f5f5f5' }}>
-                <CardContent>
-                  <Typography variant="h6" sx={{ mb: 1 }}>
-                    Месяц - $0.99
+              {/* План 2 */}
+              <Card sx={{ ...cardStyle, borderColor: 'rgba(237, 93, 25, 0.3)' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ color: 'grey.300' }}>Месячный доступ</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: '#ed5d19' }}>$0.99</Typography>
+                  </Box>
+                  <Typography variant="caption" sx={{ bgcolor: 'rgba(237, 93, 25, 0.1)', color: '#ed5d19', px: 1, py: 0.5, borderRadius: '4px' }}>
+                    Выгодно
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Получите все преимущества AtomPro+ на 30 дней
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    onClick={() => handlePurchase('month')}
-                    disabled={purchasing}
-                    sx={{ bgcolor: 'rgb(237,93,25)', '&:hover': { bgcolor: 'rgb(200,80,20)' } }}
-                  >
-                    {purchasing ? <CircularProgress size={24} /> : 'Купить за $0.99'}
-                  </Button>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    Свяжитесь с @jpegweb в Telegram для покупки
-                  </Typography>
-                </CardContent>
+                </Box>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  onClick={() => handlePurchase('month')}
+                  disabled={purchasing}
+                  sx={{ 
+                    borderColor: '#ed5d19', 
+                    color: '#ed5d19',
+                    '&:hover': { borderColor: '#ff7d47', bgcolor: 'rgba(237, 93, 25, 0.05)' },
+                    borderRadius: '8px'
+                  }}
+                >
+                  Купить через Telegram
+                </Button>
               </Card>
             </Box>
-
-            {subscriptionInfo?.balance !== undefined && (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                Ваш баланс: {subscriptionInfo.balance} ATM
-              </Alert>
-            )}
           </Box>
         )}
+
+        {subscriptionInfo?.balance !== undefined && (
+          <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 3, color: 'grey.600' }}>
+            Ваш текущий баланс: <strong>{subscriptionInfo.balance} ATM</strong>
+          </Typography>
+        )}
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Закрыть</Button>
-      </DialogActions>
     </Dialog>
   );
 };
 
 export default SubscriptionPurchase;
-
