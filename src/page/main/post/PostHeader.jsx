@@ -15,6 +15,7 @@ import {
 } from "react-icons/fi";
 import { useNavigate } from 'react-router-dom';
 import axios from '../../../system/axios';
+import { ReactComponent as StoreIcon } from './14.svg';
 
 const PostHeaderAcc = ({ 
   post = {
@@ -112,13 +113,11 @@ const PostHeaderAcc = ({
     </span>
   );
 
-  const AtomProPlusBadgeSVG = () => (
-    <div style={{
-      display: "inline-flex", alignItems: "center", marginLeft: "6px",
-      color: "orange", border: "solid orange 0.7px", padding: "2px 8px",
-      borderRadius: "50px", fontSize: "10px", lineHeight: "1"
-    }}>AtomPro+</div>
-  );
+const AtomProPlusBadgeSVG = ({ size = 16 }) => (
+  <span style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 3 }}>
+    <StoreIcon style={{ width: size, height: size }} />
+  </span>
+);
 
   const StatusBadge = ({ user }) => {
     if (!user) return null;
@@ -159,7 +158,7 @@ const PostHeaderAcc = ({
             <StatusBadge user={user} />
           </Typography>
           <Typography sx={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
-            {user.username} • {formatTimeAgo(safePost.createdAt)}
+            {user.username} • AtomGlide Post
           </Typography>
         </Box>
       </Box>

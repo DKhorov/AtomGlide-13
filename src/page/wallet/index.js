@@ -156,6 +156,7 @@ const Wallet = ({ onBack }) => {
           fontFamily, 
           borderRadius: 100, 
           mb:3,
+          mt:2,
           fontWeight:'Bold',
           color:'white',
           backgroundColor:'#866023ff',
